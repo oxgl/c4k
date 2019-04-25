@@ -1,6 +1,6 @@
 package com.oxyggen.c4k.target
 
-class HttpTarget(url: String) : UrlTarget(url) {
+open class HttpTarget(url: String) : UrlTarget(url) {
 
     protected override val hashCode: Int by lazy {
         getComparableUrl(false).hashCode()
