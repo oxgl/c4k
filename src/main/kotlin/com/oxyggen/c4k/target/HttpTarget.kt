@@ -1,10 +1,11 @@
 package com.oxyggen.c4k.target
 
-open class HttpTarget(url: String) : UrlTarget(url) {
+open class HttpTarget(url: String, val method: String = "GET", parent: CrawlTarget? = null) : UrlTarget(url, parent) {
 
     protected override val hashCode: Int by lazy {
         getComparableUrl(false).hashCode()
     }
+
 
     override fun getComparableUrl(withScheme: Boolean): String {
         var result = super.getComparableUrl(false);
@@ -14,7 +15,8 @@ open class HttpTarget(url: String) : UrlTarget(url) {
             else
                 result = "$scheme://$result"
         }
-        return result;
+
+        return "$method $result";
     }
 
     override fun equals(other: Any?): Boolean {

@@ -3,12 +3,12 @@ package com.oxyggen.c4k.analyzer
 import com.oxyggen.c4k.target.CrawlTarget
 import kotlin.reflect.KClass
 
-abstract class AbstractTargetAnalyzer<T> where T : CrawlTarget {
+abstract class CrawlTargetAnalyzer<T> where T : CrawlTarget {
 
     /**
      * Should return the set of target classes handled by current target analyzer
      */
-    abstract fun getHandledClasses(): Set<KClass<out CrawlTarget>>
+    abstract fun getHandledTargets(): Set<KClass<out CrawlTarget>>
 
     /**
      * Analyze given [target]

@@ -3,7 +3,7 @@ package com.oxyggen.c4k.target
 import java.net.MalformedURLException
 import java.net.URL
 
-open class UrlTarget(url: String) : CrawlTarget() {
+open class UrlTarget(url: String, parent: CrawlTarget? = null) : CrawlTarget(parent) {
     // http://user@test.com:8080/public/find.html?word=abc#last
     open val scheme: String         // http
     open val user: String           // user
@@ -17,8 +17,10 @@ open class UrlTarget(url: String) : CrawlTarget() {
         getComparableUrl(true).hashCode()
     }
 
-
-    open fun getComparableUrl(withScheme: Boolean = false): String {
+    /*
+     * Get URL string with or without scheme
+     */
+    open fun getUrl(withScheme: Boolean = true): String {
         var result = ""
 
         if (withScheme)
@@ -32,6 +34,13 @@ open class UrlTarget(url: String) : CrawlTarget() {
         if (fragment.isNotBlank()) result += "#$fragment"
 
         return result;
+    }
+
+    /*
+     * Get comparable URL -> same comparable URL means same target!
+     */
+    open fun getComparableUrl(withScheme: Boolean = false): String {
+        return getUrl(withScheme)
     }
 
     init {
