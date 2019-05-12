@@ -19,10 +19,13 @@ class HttpTargetAnalyzer : CrawlTargetAnalyzer<HttpTarget>() {
 
         println("Finished " + target.getUrl())
 
-        return setOf(
-            HttpTarget(target.getUrl() + "&a=a", parent = target),
-            HttpTarget(target.getUrl() + "&a=b", parent = target)
-        )
+        if (target.getUrl().length > 20)
+            return setOf()
+        else
+            return setOf(
+                HttpTarget(target.getUrl() + "&a=a", parent = target),
+                HttpTarget(target.getUrl() + "&a=b", parent = target)
+            )
     }
 
 

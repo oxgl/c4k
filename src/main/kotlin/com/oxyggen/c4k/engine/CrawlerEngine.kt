@@ -8,75 +8,29 @@ import kotlinx.coroutines.selects.select
 
 class CrawlerEngine() {
 
-    private var targetQueue: MutableSet<CrawlTarget> = mutableSetOf()
-    private var jobs: MutableMap<CrawlTarget, CrawlerJob> = mutableMapOf()
-
-    private fun addTargets(foundTargets: Set<CrawlTarget>) {
-        foundTargets.forEach {
-            synchronized(jobs) {
-                if (jobs.contains(it)) {
-                    println("Target already in jobs, skipping $it...")
-                } else if (targetQueue.contains(it)) {
-                    println("Target already in queue, skipping $it...")
-                } else {
-                    targetQueue.add(it);
-                    println("Target added $it")
-                }
-            }
-        }
-    }
-
-    private fun getNewTargets(): Set<CrawlTarget> {
-        var result: Set<CrawlTarget> = setOf()
-        synchronized(jobs) {
-            result = targetQueue
-            targetQueue = mutableSetOf()
-        }
-        return result
-    }
-
-    private fun addJob(target: CrawlTarget, crawlerJob: CrawlerJob) {
-        synchronized(jobs) {
-            jobs.put(target, crawlerJob)
-        }
-    }
-
-
     fun execute() = runBlocking {
 
-        println("Main start")
+        val jobQueue = CrawlerJobQueue(this);
+
+        println("Crawler started...")
         for (i in 0..100) {
-            addTargets(setOf(HttpTarget("http://google.com/$i")))
+            jobQueue.addTarets(setOf(HttpTarget("http://google.com/$i")))
         }
 
-        var isDone = false
-//        do {
-            val newTargets = getNewTargets()
+        while (jobQueue.isJobActive()) {
+            println("${jobQueue.getActiveJobCount()} jobs active, receiving result...")
 
-            newTargets.forEach {
-                val asyncJob = async(Dispatchers.Default) {
-                    if (it is HttpTarget) {
-                        HttpTargetAnalyzer().analyze(it)
-                    } else {
-                        setOf()
-                    }
-                }
-                addJob(it, CrawlerJob(asyncJob))
-            }
+            val newTargets = jobQueue.receiveNewTargets()
 
-            val finishedJob = select<Map.Entry<CrawlTarget, CrawlerJob>> {
-                jobs.forEach {
-                    it.value.job.onAwait { _ ->
-                        it
-                    }
-                }
-            }
+            println("${newTargets.size} new targets, adding to queue")
 
-            println("XXXXXXXXXXXX -> $finishedJob")
+            jobQueue.addTarets(newTargets)
 
-//        } while (finishedJob != null)
+            println("Total targets in queue: ${jobQueue.getTargetCount()}")
+        }
 
-        println("Main finished")
+
+        println("Crawler finished")
 
     }
 
