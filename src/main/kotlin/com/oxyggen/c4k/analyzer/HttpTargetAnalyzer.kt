@@ -2,6 +2,7 @@ package com.oxyggen.c4k.analyzer
 
 import com.oxyggen.c4k.target.CrawlTarget
 import com.oxyggen.c4k.target.HttpTarget
+import kotlinx.coroutines.delay
 import java.net.URL
 import kotlin.reflect.KClass
 
@@ -16,6 +17,8 @@ class HttpTargetAnalyzer : CrawlTargetAnalyzer<HttpTarget>() {
 //        val result = URL(target.getUrl()).readText()
 
         //      println(result)
+
+        delay(target.getUrl().length * 100L)
 
         println("Finished " + target.getUrl())
 

@@ -1,16 +1,19 @@
 package com.oxyggen.c4k.engine
 
-import com.oxyggen.c4k.analyzer.HttpTargetAnalyzer
-import com.oxyggen.c4k.target.CrawlTarget
 import com.oxyggen.c4k.target.HttpTarget
-import kotlinx.coroutines.*
-import kotlinx.coroutines.selects.select
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+
 
 class CrawlerEngine() {
 
-    fun execute() = runBlocking {
+    var job: Job? = null
 
-        val jobQueue = CrawlerJobQueue(this);
+    suspend fun execute(scope: CoroutineScope) {
+        //job = scope.launch {
+        val jobQueue = CrawlerJobQueue(scope);
+
+        println("Crawler engine coroutine context ${scope}")
 
         println("Crawler started...")
         for (i in 0..100) {
@@ -28,10 +31,13 @@ class CrawlerEngine() {
 
             println("Total targets in queue: ${jobQueue.getTargetCount()}")
         }
+        println("Crawler finished.")
+        //}
+    }
 
-
-        println("Crawler finished")
-
+    suspend fun await() {
+        job?.join()
+        job = null
     }
 
 

@@ -5,14 +5,17 @@ import com.oxyggen.c4k.target.CrawlTarget
 import com.oxyggen.c4k.target.HttpTarget
 import kotlinx.coroutines.*
 import kotlinx.coroutines.selects.select
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
-class CrawlerJobQueue(val coroutineScope: CoroutineScope) {
+class CrawlerJobQueue(private val coroutineScope: CoroutineScope) {
 
+    private val mutex = Mutex()
     private var targets: MutableSet<CrawlTarget> = mutableSetOf();
     private var activeJobs: MutableSet<CrawlerJobEntry> = mutableSetOf();
 
     suspend fun addTarets(newTargets: Set<CrawlTarget>) {
-        synchronized(targets) {
+        mutex.withLock {
             newTargets.forEach {
                 if (targets.contains(it)) {
                     println("Target already in jobs, skipping $it...")
@@ -48,7 +51,7 @@ class CrawlerJobQueue(val coroutineScope: CoroutineScope) {
             }
         }
 
-        synchronized(targets) {
+        mutex.withLock {
             activeJobs.remove(finishedJob)
         }
 
