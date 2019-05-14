@@ -15,8 +15,8 @@ class CrawlerEngine() {
         logger.info { "Crawler engine coroutine context ${scope}" }
 
         logger.info { "Crawler started..." }
-        for (i in 0..100) {
-            jobQueue.addTarets(setOf(HttpTarget("http://google.com/$i")))
+        for (i in 0..10) {
+            jobQueue.addTarets(setOf(HttpTarget("https://google.com/")))
         }
 
         while (jobQueue.isJobActive()) {

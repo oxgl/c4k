@@ -45,7 +45,7 @@ open class UrlTarget(url: String, parent: CrawlTarget? = null) : CrawlTarget(par
 
     init {
         var u: URL
-        var foundScheme = ""
+        var foundScheme: String
         try {
             // Try to parse the URL
             // Protocol handlers for the following protocols are

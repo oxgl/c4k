@@ -13,7 +13,7 @@ abstract class CrawlTargetAnalyzer<T> where T : CrawlTarget {
     /**
      * Analyze given [target]
      */
-    abstract suspend fun analyze(target: T): Set<out CrawlTarget>
+    abstract suspend fun analyze(target: T): Set<CrawlTarget>
 
     /*
     * Return whether we should visit (and analyze) given [target]
