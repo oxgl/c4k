@@ -1,37 +1,74 @@
 package com.oxyggen.c4k.engine
 
-import com.oxyggen.c4k.target.HttpTarget
+import com.oxyggen.c4k.analyzer.CrawlTargetAnalyzer
+import com.oxyggen.c4k.analyzer.HttpTargetAnalyzer
+import com.oxyggen.c4k.target.CrawlTarget
 import kotlinx.coroutines.CoroutineScope
-import mu.KotlinLogging
+import kotlinx.coroutines.delay
+import org.apache.logging.log4j.kotlin.Logging
+import kotlin.math.max
 
-private val logger = KotlinLogging.logger {}
+class CrawlerEngine(val config: CrawlerConfig = CrawlerConfig()) : Logging {
 
-class CrawlerEngine() {
+    private var startTimeMillis: Long = 0L
+
+    private val jobHandler: CrawlerJobHandler by lazy {
+        CrawlerJobHandler()
+    }
+
+    private fun getElapsedTimeMillis() = System.currentTimeMillis() - startTimeMillis
+    private fun getEarliestStartTimeMillis() = (jobHandler.getExecutedJobCount() + 1L) * config.politenessDelay
+
+    fun registerTargetAnalyzer(analyzer: CrawlTargetAnalyzer) = jobHandler.registerTargetAnalyzer(HttpTargetAnalyzer())
+
+    fun addTarget(target: CrawlTarget) = jobHandler.pushTargets(setOf(target))
+
+    fun addTargets(targets: Set<CrawlTarget>) = jobHandler.pushTargets(targets)
+
 
     suspend fun execute(scope: CoroutineScope) {
-        //job = scope.launch {
-        val jobQueue = CrawlerJobQueue(scope);
+        // Register at least analyzer for HttpTarget
+        jobHandler.registerTargetAnalyzer(HttpTargetAnalyzer(), replace = false)
 
-        logger.info { "Crawler engine coroutine context ${scope}" }
+        // Remember start time
+        startTimeMillis = System.currentTimeMillis()
 
-        logger.info { "Crawler started..." }
-        for (i in 0..10) {
-            jobQueue.addTarets(setOf(HttpTarget("https://google.com/")))
-        }
+        // Write info
+        logger.info { "Crawler started in coroutine context ${scope}..." }
 
-        while (jobQueue.isJobActive()) {
-            logger.info { "${jobQueue.getActiveJobCount()} jobs active, receiving result..." }
+        // While job is active or targets are waiting
+        while (jobHandler.isJobActive() || jobHandler.isTargetWaiting()) {
 
-            val newTargets = jobQueue.receiveNewTargets()
+            val waitTimeMillis = getEarliestStartTimeMillis() - getElapsedTimeMillis()
 
-            logger.info { "${newTargets.size} new targets, adding to queue" }
+            logger.info { "EPST: ${getEarliestStartTimeMillis()}, ET: ${getElapsedTimeMillis()}, TargetWaiting: ${jobHandler.isTargetWaiting()}, JobActive ${jobHandler.isJobActive()}" }
 
-            jobQueue.addTarets(newTargets)
+            // Start new jobs if possible
+            if (jobHandler.isTargetWaiting()) {
+                if (waitTimeMillis <= 0) {
+                    // Earliest possible start time reached, so start next job
+                    jobHandler.startJobForNextWaitingTarget(scope)
+                    // Write log
+                    logger.info { "New job scheduled. Total executed jobs: ${jobHandler.getExecutedJobCount()}" }
+                }
+            }
 
-            logger.info { "Total targets in queue: ${jobQueue.getTargetCount()}" }
+            // Get result from jobs
+            if (jobHandler.isJobActive()) {
+                val newTargets = jobHandler.receiveNewTargets()
+                if (newTargets != null) {
+                    logger.info { "Job finished. ${newTargets.size} new targets received." }
+                    addTargets(newTargets)
+                } else if (waitTimeMillis > 0) {
+                    logger.info { "Job was not finished, waiting ${waitTimeMillis} milliseconds" }
+                    delay(waitTimeMillis)
+                } else if (!jobHandler.isTargetWaiting()) {
+                    delay(max(20, waitTimeMillis / 2))
+                }
+            }
+
         }
         logger.info { "Crawler finished." }
-        //}
     }
 
 }
