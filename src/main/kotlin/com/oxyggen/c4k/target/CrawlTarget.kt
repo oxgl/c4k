@@ -1,6 +1,7 @@
 package com.oxyggen.c4k.target
 
 abstract class CrawlTarget(val parent: CrawlTarget? = null) {
+
     val depth: Int
 
     init {

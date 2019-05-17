@@ -12,12 +12,10 @@ internal class CrawlerEngineTest {
     fun execute() = runBlocking {
         println("Test coroutine scope ${this}")
 
-        val ce = CrawlerEngine(CrawlerConfig(politenessDelay = 200))
+        val ce = CrawlerEngine(CrawlerConfig(politenessDelay = 200, maxDepth = 2))
 
-        ce.addTarget(HttpTarget("https://www.google.com"))
-        ce.addTarget(HttpTarget("https://www.google.com?q=x"))
-        ce.addTarget(HttpTarget("https://www.google.com?q=y"))
-        ce.addTarget(HttpTarget("https://www.google.com?q=z"))
+        //ce.addTarget(HttpTarget("https://www.wikipedia.org/"))
+        ce.addTarget(HttpTarget("https://google.com"))
 
         ce.execute(this)
 

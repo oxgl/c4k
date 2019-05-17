@@ -1,94 +1,87 @@
 package com.oxyggen.c4k.target
 
-import java.net.MalformedURLException
-import java.net.URL
+import java.net.URI
 
-open class UrlTarget(url: String, parent: CrawlTarget? = null) : CrawlTarget(parent) {
-    // http://user@test.com:8080/public/find.html?word=abc#last
-    open val scheme: String         // http
-    open val user: String           // user
-    open val host: String           // test.com
-    open val port: Int              // 8080
-    open val path: String           // /public/find.html
-    open val query: String          // word=abc
-    open val fragment: String       // last
+open class UrlTarget(urlString: String, parent: CrawlTarget? = null) : CrawlTarget(parent) {
+
+    protected val uri: URI?
+
+    open val scheme get() = uri?.scheme ?: ""
+    open val user get() = uri?.userInfo ?: ""
+    open val host get() = uri?.host ?: ""
+    open val port get() = uri?.port ?: -1
+    open val path get() = uri?.path ?: ""
+    open val query get() = uri?.query ?: ""
+    open val fragment get() = uri?.fragment ?: ""
+    open val valid get() = uri != null
+    open val targetIdentifier get() = getUrlString(false)
+
+    init {
+        uri = try {
+            //TODO: fix the url encoding/decoding nightmare
+
+
+            val thisUri = URI.create(urlString)
+            if (thisUri.isAbsolute) {
+                thisUri
+            } else {
+                if (parent is UrlTarget) {
+                    URI.create(parent.getUrlString()).resolve(thisUri)
+                } else {
+                    null
+                }
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
 
     protected open val hashCode: Int by lazy {
-        getComparableUrl(true).hashCode()
+        targetIdentifier.hashCode()
     }
+
 
     /*
      * Get URL string with or without scheme
      */
-    open fun getUrl(withScheme: Boolean = true): String {
+    open fun getUrlString(withScheme: Boolean = true): String {
         var result = ""
 
         if (withScheme)
-            result += "$scheme://"
+            result += "${scheme}://"
 
-        if (user.isNotBlank()) result += "$user@"
+        if (user.isNotBlank()) result += "${user}@"
         if (host.isNotBlank()) result += host
         if (port > 0) result += ":$port"
         if (path.isNotBlank()) result += path
         if (query.isNotBlank()) result += "?$query"
         if (fragment.isNotBlank()) result += "#$fragment"
 
-        return result;
+
+        return result
     }
 
     /*
-     * Get comparable URL -> same comparable URL means same target!
+     * Get target identifier -> same ID means same target!
      */
-    open fun getComparableUrl(withScheme: Boolean = false): String {
-        return getUrl(withScheme)
-    }
-
-    init {
-        var u: URL
-        var foundScheme: String
-        try {
-            // Try to parse the URL
-            // Protocol handlers for the following protocols are
-            // guaranteed to exist: http, https, file, and jar
-            u = URL(url)
-            foundScheme = u.protocol.toLowerCase()
-        } catch (ex: MalformedURLException) {
-            // Throws an exception if it does not recognize the scheme
-            val index = url.indexOf(':')
-            foundScheme = url.take(index).toLowerCase()
-
-            // So we will simulate "http" scheme
-            u = URL("http" + url.drop(index))
-        }
-
-        scheme = foundScheme
-        user = if (u.userInfo != null) u.userInfo else ""
-        host = if (u.host != null) u.host.toLowerCase() else ""
-        port = u.port
-        path = if (u.path != null) u.path else ""
-        query = if (u.query != null) u.query else ""
-        fragment = if (u.ref != null) u.ref else ""
-    }
-
-    override fun hashCode(): Int {
-        return hashCode
-    }
-
-    override fun toString(): String {
-        return getComparableUrl(true);
-    }
+    //open fun getTargetIdentifier(): String = getUrlString(false)
 
 
-    override fun equals(other: Any?): Boolean {
+    override fun hashCode() = hashCode
+
+    override fun toString() = targetIdentifier
+
+
+    override fun equals(other: Any?): Boolean =
         if (other is UrlTarget) {
             // Fast check (hashCode)
-            if (this.hashCode() != other.hashCode())
-                return false;
-
-            // Slow comparison
-            return getComparableUrl(true) == other.getComparableUrl(true);
+            if (this.hashCode() != other.hashCode()) {
+                false
+            } else {
+                // Slow comparison
+                targetIdentifier == other.targetIdentifier
+            }
         } else {
-            return false
+            false
         }
-    }
 }

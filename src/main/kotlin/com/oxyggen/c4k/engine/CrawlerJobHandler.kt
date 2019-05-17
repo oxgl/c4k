@@ -11,26 +11,31 @@ import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.kotlin.Logging
 import java.util.*
 import kotlin.reflect.KClass
+import kotlin.reflect.full.createInstance
 
 
 class CrawlerJobHandler() : Logging {
 
-    var executedJobs = 0;
+    var executedJobs = 0
 
     private val mutex = Mutex()
-    private var targetAnalyzers: MutableMap<KClass<out CrawlTarget>, CrawlTargetAnalyzer> = mutableMapOf()
     private var targetsWaiting: Queue<CrawlTarget> = ArrayDeque<CrawlTarget>()
-    private var targets: MutableSet<CrawlTarget> = mutableSetOf();
+    private var targets: MutableSet<CrawlTarget> = mutableSetOf()
+    private var targetAnalyzers: MutableMap<KClass<out CrawlTarget>, CrawlTargetAnalyzer> = mutableMapOf()
+    private var activeJobs: MutableSet<CrawlerJobEntry> = mutableSetOf()
 
-    private var activeJobs: MutableSet<CrawlerJobEntry> = mutableSetOf();
+    private fun getTargetAnalyzer(target: CrawlTarget): CrawlTargetAnalyzer? = targetAnalyzers[target::class]
 
-    fun registerTargetAnalyzer(analyzer: CrawlTargetAnalyzer, replace: Boolean = true) {
-        val target = analyzer.getHandledTargets()
+    fun registerTargetAnalyzerClass(analyzerClass: KClass<out CrawlTargetAnalyzer>, replace: Boolean = true) {
+
+        val analyzerInstance = analyzerClass.createInstance()
+
+        val target = analyzerInstance.getHandledTargets()
         target.forEach {
             if (replace)
-                targetAnalyzers.replace(it, analyzer)
+                targetAnalyzers.replace(it, analyzerInstance)
             else if (!targetAnalyzers.containsKey(it))
-                targetAnalyzers.put(it, analyzer)
+                targetAnalyzers.put(it, analyzerInstance)
         }
     }
 
@@ -49,11 +54,11 @@ class CrawlerJobHandler() : Logging {
         val target = targetsWaiting.poll()
 
         if (target != null) {
-            val analyzer = targetAnalyzers[target::class]
+            val analyzer = getTargetAnalyzer(target)
             val job = coroutineScope.async(Dispatchers.Default) { analyzer!!.analyze(target) }
             mutex.withLock {
                 executedJobs++
-                activeJobs.add(CrawlerJobEntry(target, job));
+                activeJobs.add(CrawlerJobEntry(target, job))
             }
         }
     }
@@ -72,7 +77,7 @@ class CrawlerJobHandler() : Logging {
 
     fun getTargetCount() = targets.size
 
-    suspend fun receiveNewTargets(): Set<CrawlTarget>? {
+    suspend fun receiveNewTargets(maxDepth:Int = -1): Set<CrawlTarget>? {
 
         var result: MutableSet<CrawlTarget>? = null
 
@@ -83,7 +88,14 @@ class CrawlerJobHandler() : Logging {
                 finishedJobs.add(it)
                 if (it.job.isCompleted) {
                     if (result == null) result = mutableSetOf<CrawlTarget>()
-                    result!!.addAll(it.job.await())
+                    val newTargets = it.job.await()
+                    newTargets.forEach {
+                        if (maxDepth <= 0 || it.depth <= maxDepth) {
+                            val analyzer = getTargetAnalyzer(it)
+                            if (analyzer != null && analyzer.shouldVisit(it))
+                                result!!.add(it)
+                        }
+                    }
                 }
             }
         }

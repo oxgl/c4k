@@ -1,35 +1,28 @@
 package com.oxyggen.c4k.target
 
-open class HttpTarget(url: String, val method: String = "GET", parent: CrawlTarget? = null) : UrlTarget(url, parent) {
+import io.ktor.http.HttpMethod
+
+open class HttpTarget(urlString: String, val method: HttpMethod = HttpMethod.Get, parent: CrawlTarget? = null) :
+    UrlTarget(urlString, parent) {
 
     protected override val hashCode: Int by lazy {
-        getComparableUrl(false).hashCode()
+        targetIdentifier.hashCode()
     }
 
+    override val targetIdentifier: String
+        get() = "${method.value} ${super.targetIdentifier}"
 
-    override fun getComparableUrl(withScheme: Boolean): String {
-        var result = super.getComparableUrl(false);
-        if (withScheme) {
-            if (scheme == "http")
-                result = "https://$result"
-            else
-                result = "$scheme://$result"
-        }
-
-        return "$method $result";
-    }
-
-    override fun equals(other: Any?): Boolean {
-        if (other is UrlTarget) {
+    override fun equals(other: Any?): Boolean =
+        if (other is HttpTarget) {
             // Fast check (hashCode)
-            if (this.hashCode() != other.hashCode())
-                return false;
-
-            // Slow comparison
-            return getComparableUrl(false) == other.getComparableUrl(false);
+            if (this.hashCode() != other.hashCode()) {
+                false
+            } else {
+                // Slow comparison
+                targetIdentifier == other.targetIdentifier
+            }
         } else {
-            return false
+            false
         }
-    }
 
 }

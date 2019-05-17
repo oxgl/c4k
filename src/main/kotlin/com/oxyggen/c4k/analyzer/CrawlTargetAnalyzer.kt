@@ -11,7 +11,7 @@ abstract class CrawlTargetAnalyzer {
     abstract fun getHandledTargets(): Set<KClass<out CrawlTarget>>
 
     /**
-     * Analyze given [target]
+     * Analyze given [target] and get the new targets
      */
     abstract suspend fun analyze(target: CrawlTarget): Set<CrawlTarget>
 

@@ -9,8 +9,7 @@ internal class HttpTargetTest {
     fun `returns correct normalized Url`() {
         val url = HttpTarget("https://user@TEST.com/index.htm?query=abc#last")
 
-        Assertions.assertEquals(url.getComparableUrl(true), "GET https://user@test.com/index.htm?query=abc#last")
-        Assertions.assertEquals(url.getComparableUrl(false), "GET user@test.com/index.htm?query=abc#last")
+        Assertions.assertEquals(url.targetIdentifier, "GET user@test.com/index.htm?query=abc#last")
     }
 
 

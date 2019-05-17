@@ -7,6 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import org.apache.logging.log4j.kotlin.Logging
 import kotlin.math.max
+import kotlin.reflect.KClass
 
 class CrawlerEngine(val config: CrawlerConfig = CrawlerConfig()) : Logging {
 
@@ -19,29 +20,29 @@ class CrawlerEngine(val config: CrawlerConfig = CrawlerConfig()) : Logging {
     private fun getElapsedTimeMillis() = System.currentTimeMillis() - startTimeMillis
     private fun getEarliestStartTimeMillis() = (jobHandler.getExecutedJobCount() + 1L) * config.politenessDelay
 
-    fun registerTargetAnalyzer(analyzer: CrawlTargetAnalyzer) = jobHandler.registerTargetAnalyzer(HttpTargetAnalyzer())
+    fun registerTargetAnalyzerClass(analyzerClass: KClass<out CrawlTargetAnalyzer>) =
+        jobHandler.registerTargetAnalyzerClass(analyzerClass)
 
     fun addTarget(target: CrawlTarget) = jobHandler.pushTargets(setOf(target))
 
     fun addTargets(targets: Set<CrawlTarget>) = jobHandler.pushTargets(targets)
 
-
     suspend fun execute(scope: CoroutineScope) {
         // Register at least analyzer for HttpTarget
-        jobHandler.registerTargetAnalyzer(HttpTargetAnalyzer(), replace = false)
+        jobHandler.registerTargetAnalyzerClass(HttpTargetAnalyzer::class, replace = false)
 
         // Remember start time
         startTimeMillis = System.currentTimeMillis()
 
         // Write info
-        logger.info { "Crawler started in coroutine context ${scope}..." }
+        logger.info { "Crawler started in coroutine context $scope..." }
 
         // While job is active or targets are waiting
         while (jobHandler.isJobActive() || jobHandler.isTargetWaiting()) {
 
             val waitTimeMillis = getEarliestStartTimeMillis() - getElapsedTimeMillis()
 
-            logger.info { "EPST: ${getEarliestStartTimeMillis()}, ET: ${getElapsedTimeMillis()}, TargetWaiting: ${jobHandler.isTargetWaiting()}, JobActive ${jobHandler.isJobActive()}" }
+            //logger.info { "EPST: ${getEarliestStartTimeMillis()}, ET: ${getElapsedTimeMillis()}, TargetWaiting: ${jobHandler.isTargetWaiting()}, JobActive ${jobHandler.isJobActive()}" }
 
             // Start new jobs if possible
             if (jobHandler.isTargetWaiting()) {
@@ -49,26 +50,30 @@ class CrawlerEngine(val config: CrawlerConfig = CrawlerConfig()) : Logging {
                     // Earliest possible start time reached, so start next job
                     jobHandler.startJobForNextWaitingTarget(scope)
                     // Write log
-                    logger.info { "New job scheduled. Total executed jobs: ${jobHandler.getExecutedJobCount()}" }
+                    logger.debug { ">> New job scheduled. Total executed jobs: ${jobHandler.getExecutedJobCount()}, active jobs: ${jobHandler.getActiveJobCount()}" }
                 }
             }
 
             // Get result from jobs
             if (jobHandler.isJobActive()) {
-                val newTargets = jobHandler.receiveNewTargets()
+                val newTargets = jobHandler.receiveNewTargets(maxDepth = config.maxDepth)
                 if (newTargets != null) {
-                    logger.info { "Job finished. ${newTargets.size} new targets received." }
+                    logger.debug { "<< Job finished. ${newTargets.size} new targets received, active jobs: ${jobHandler.getActiveJobCount()}" }
                     addTargets(newTargets)
                 } else if (waitTimeMillis > 0) {
-                    logger.info { "Job was not finished, waiting ${waitTimeMillis} milliseconds" }
+                    logger.debug { "Job was not finished, waiting $waitTimeMillis milliseconds" }
                     delay(waitTimeMillis)
                 } else if (!jobHandler.isTargetWaiting()) {
                     delay(max(20, waitTimeMillis / 2))
                 }
             }
-
         }
-        logger.info { "Crawler finished." }
+
+        val elapsedTimeMillis = getElapsedTimeMillis()
+        val jobTimeMillis =
+            if (jobHandler.getExecutedJobCount() > 0) elapsedTimeMillis / jobHandler.getExecutedJobCount() else 0
+
+        logger.info { "Crawler finished. ${jobHandler.getExecutedJobCount()} finished jobs, elapsed time $elapsedTimeMillis ms, $jobTimeMillis ms / job" }
     }
 
 }
