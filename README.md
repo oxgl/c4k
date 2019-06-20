@@ -1,6 +1,6 @@
-# k4j
+# c4k
 
-Kotlin crawling library. This is (not only) a web crawling library for kotlin. 
+Kotlin crawling library (Crawler for Kotlin). This is (not only) a web crawling library for kotlin. 
 It's still in development and testing phase, so do not use it in production system.
 
 
