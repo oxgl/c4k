@@ -11,7 +11,7 @@ internal class HttpTargetAnalyzerTest {
 
         var x = HttpTargetAnalyzer().getHandledTargets()
 
-        runBlocking { ta.analyze(HttpTarget("http://www.google.com")) }
+        runBlocking { ta.analyze(HttpTarget("https://www.distrowatch.com")) }
 
         assert(x.contains(HttpTarget::class))
     }

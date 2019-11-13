@@ -12,4 +12,9 @@ abstract class CrawlTarget(val parent: CrawlTarget? = null) {
         }
     }
 
+    /********************************************************************************
+     * @return true if target is valid
+     ********************************************************************************/
+    abstract fun isValid(): Boolean
+
 }

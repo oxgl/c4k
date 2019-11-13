@@ -14,7 +14,7 @@ import kotlin.reflect.KClass
 import kotlin.reflect.full.createInstance
 
 
-class CrawlerJobHandler() : Logging {
+class CrawlerJobHandler(val engine: CrawlerEngine) : Logging {
 
     var executedJobs = 0
 
@@ -55,7 +55,9 @@ class CrawlerJobHandler() : Logging {
 
         if (target != null) {
             val analyzer = getTargetAnalyzer(target)
-            val job = coroutineScope.async(Dispatchers.Default) { analyzer!!.analyze(target) }
+            val job = coroutineScope.async(Dispatchers.Default) {
+                    analyzer!!.analyze(target)
+            }
             mutex.withLock {
                 executedJobs++
                 activeJobs.add(CrawlerJobEntry(target, job))

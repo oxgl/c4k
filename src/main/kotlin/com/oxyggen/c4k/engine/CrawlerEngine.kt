@@ -9,12 +9,12 @@ import org.apache.logging.log4j.kotlin.Logging
 import kotlin.math.max
 import kotlin.reflect.KClass
 
-class CrawlerEngine(val config: CrawlerConfig = CrawlerConfig()) : Logging {
+class CrawlerEngine(val config: CrawlerEngineConfig = CrawlerEngineConfig()) : Logging {
 
     private var startTimeMillis: Long = 0L
 
     private val jobHandler: CrawlerJobHandler by lazy {
-        CrawlerJobHandler()
+        CrawlerJobHandler(this)
     }
 
     private fun getElapsedTimeMillis() = System.currentTimeMillis() - startTimeMillis
