@@ -26,16 +26,14 @@ class CrawlerJobHandler(val engine: CrawlerEngine) : Logging {
 
     private fun getTargetAnalyzer(target: CrawlTarget): CrawlTargetAnalyzer? = targetAnalyzers[target::class]
 
-    fun registerTargetAnalyzerClass(analyzerClass: KClass<out CrawlTargetAnalyzer>, replace: Boolean = true) {
+    fun registerTargetAnalyzer(analyzer: CrawlTargetAnalyzer, replace: Boolean = true) {
 
-        val analyzerInstance = analyzerClass.createInstance()
-
-        val target = analyzerInstance.getHandledTargets()
+        val target = analyzer.getHandledTargets()
         target.forEach {
             if (replace)
-                targetAnalyzers.replace(it, analyzerInstance)
+                targetAnalyzers.replace(it, analyzer)
             else if (!targetAnalyzers.containsKey(it))
-                targetAnalyzers.put(it, analyzerInstance)
+                targetAnalyzers.put(it, analyzer)
         }
     }
 
@@ -56,7 +54,7 @@ class CrawlerJobHandler(val engine: CrawlerEngine) : Logging {
         if (target != null) {
             val analyzer = getTargetAnalyzer(target)
             val job = coroutineScope.async(Dispatchers.Default) {
-                    analyzer!!.analyze(target)
+                analyzer!!.analyze(target)
             }
             mutex.withLock {
                 executedJobs++
@@ -79,7 +77,7 @@ class CrawlerJobHandler(val engine: CrawlerEngine) : Logging {
 
     fun getTargetCount() = targets.size
 
-    suspend fun receiveNewTargets(maxDepth:Int = -1): Set<CrawlTarget>? {
+    suspend fun receiveNewTargets(maxDepth: Int = -1): Set<CrawlTarget>? {
 
         var result: MutableSet<CrawlTarget>? = null
 

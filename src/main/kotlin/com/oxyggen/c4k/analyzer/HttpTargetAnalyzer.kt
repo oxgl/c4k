@@ -14,7 +14,13 @@ import org.apache.logging.log4j.kotlin.Logging
 import org.jsoup.Jsoup
 import kotlin.reflect.KClass
 
-open class HttpTargetAnalyzer : CrawlTargetAnalyzer(), Logging {
+open class HttpTargetAnalyzer(val config: Config = Config()) : CrawlTargetAnalyzer(), Logging {
+
+    data class Config(
+        val followRedirects: Boolean = true,
+        val socketTimeout: Int = 20_000,
+        val connectTimeout: Int = 20_000
+    )
 
     override fun getHandledTargets(): Set<KClass<out HttpTarget>> = setOf(HttpTarget::class)
 
@@ -24,9 +30,9 @@ open class HttpTargetAnalyzer : CrawlTargetAnalyzer(), Logging {
 
             val client = HttpClient(Apache) {
                 engine {
-                    followRedirects = true
-                    socketTimeout = 20_000
-                    connectTimeout = 20_000
+                    followRedirects = config.followRedirects
+                    socketTimeout = config.socketTimeout
+                    connectTimeout = config.connectTimeout
                 }
             }
 
@@ -98,6 +104,4 @@ open class HttpTargetAnalyzer : CrawlTargetAnalyzer(), Logging {
         }
         return result
     }
-
-
 }

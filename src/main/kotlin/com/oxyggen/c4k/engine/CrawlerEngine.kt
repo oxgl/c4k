@@ -9,7 +9,12 @@ import org.apache.logging.log4j.kotlin.Logging
 import kotlin.math.max
 import kotlin.reflect.KClass
 
-class CrawlerEngine(val config: CrawlerEngineConfig = CrawlerEngineConfig()) : Logging {
+class CrawlerEngine(val config: CrawlerEngine.Config = CrawlerEngine.Config()) : Logging {
+
+    data class Config(
+        val politenessDelay: Int = 200,
+        val maxDepth: Int = -1
+    )
 
     private var startTimeMillis: Long = 0L
 
@@ -17,11 +22,15 @@ class CrawlerEngine(val config: CrawlerEngineConfig = CrawlerEngineConfig()) : L
         CrawlerJobHandler(this)
     }
 
+    private fun startTimer() {
+        startTimeMillis = System.currentTimeMillis()
+    }
+
     private fun getElapsedTimeMillis() = System.currentTimeMillis() - startTimeMillis
     private fun getEarliestStartTimeMillis() = (jobHandler.getExecutedJobCount() + 1L) * config.politenessDelay
 
-    fun registerTargetAnalyzerClass(analyzerClass: KClass<out CrawlTargetAnalyzer>) =
-        jobHandler.registerTargetAnalyzerClass(analyzerClass)
+    fun registerTargetAnalyzer(analyzer: CrawlTargetAnalyzer) =
+        jobHandler.registerTargetAnalyzer(analyzer)
 
     fun addTarget(target: CrawlTarget) = jobHandler.pushTargets(setOf(target))
 
@@ -29,10 +38,10 @@ class CrawlerEngine(val config: CrawlerEngineConfig = CrawlerEngineConfig()) : L
 
     suspend fun execute(scope: CoroutineScope) {
         // Register at least analyzer for HttpTarget
-        jobHandler.registerTargetAnalyzerClass(HttpTargetAnalyzer::class, replace = false)
+        jobHandler.registerTargetAnalyzer(HttpTargetAnalyzer(), replace = false)
 
         // Remember start time
-        startTimeMillis = System.currentTimeMillis()
+        startTimer()
 
         // Write info
         logger.info { "Crawler started in coroutine context $scope..." }

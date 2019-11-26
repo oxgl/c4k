@@ -1,5 +1,6 @@
 package com.oxyggen.c4k.engine
 
+import com.oxyggen.c4k.analyzer.HttpTargetAnalyzer
 import com.oxyggen.c4k.target.HttpTarget
 import kotlinx.coroutines.*
 import org.junit.jupiter.api.Test
@@ -10,7 +11,7 @@ internal class CrawlerEngineTest {
     fun execute() = runBlocking {
         println("Test coroutine scope ${this}")
 
-        val ce = CrawlerEngine(CrawlerEngineConfig(politenessDelay = 200, maxDepth = 2))
+        val ce = CrawlerEngine(CrawlerEngine.Config(politenessDelay = 200, maxDepth = 2))
 
         //ce.addTarget(HttpTarget("https://www.wikipedia.org/"))
         ce.addTarget(HttpTarget("https://distrowatch.com"))
@@ -18,5 +19,6 @@ internal class CrawlerEngineTest {
         ce.execute(this)
 
         println("out!")
+        val x = HttpTargetAnalyzer.Config()
     }
 }
