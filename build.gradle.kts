@@ -8,6 +8,7 @@ val ktorVersion = "1.2.5"
 val junitVersion = "5.5.2"
 val log4jVersion = "2.11.2"
 val log4jApiKotlinVersion = "1.0.0"
+val urilibVersion = "1.0.10"
 
 
 plugins {
@@ -27,7 +28,7 @@ repositories {
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
-    implementation("com.oxyggen.net:urilib:1.0.7")
+    implementation("com.oxyggen.net:urilib:$urilibVersion")
     //implementation("io.github.microutils:kotlin-logging:$kotlinLoggingVersion")
     implementation("org.jsoup:jsoup:$jsoupVersion")
     implementation("io.ktor:ktor-client-core:$ktorVersion")

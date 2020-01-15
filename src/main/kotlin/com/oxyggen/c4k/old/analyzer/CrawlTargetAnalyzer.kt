@@ -1,4 +1,4 @@
-package com.oxyggen.c4k.analyzer
+package com.oxyggen.c4k.old.analyzer
 
 import com.oxyggen.c4k.target.CrawlTarget
 import kotlin.reflect.KClass

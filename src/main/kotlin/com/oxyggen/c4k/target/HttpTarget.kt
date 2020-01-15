@@ -1,14 +1,19 @@
 package com.oxyggen.c4k.target
 
+import com.oxyggen.c4k.old.group.CrawlGroup
 import com.oxyggen.net.HttpURL
 import io.ktor.http.HttpMethod
 
 open class HttpTarget(urlString: String, val method: HttpMethod = HttpMethod.Get, parent: CrawlTarget? = null) :
     UriTarget(urlString, parent) {
 
-    open val url get() = uri as HttpURL
+    init {
+        if (uri !is HttpURL) {
+            throw IllegalArgumentException("HttpTarget: can't resolve ${urlString} into HttpURL")
+        }
+    }
 
-    override fun isValid() = resolvedUri is HttpURL
+    open val url get() = uri as HttpURL
 
     override val targetIdentifier: String by lazy { "${method.value} ${url.toNormalizedUriString()}" }
 
@@ -26,5 +31,7 @@ open class HttpTarget(urlString: String, val method: HttpMethod = HttpMethod.Get
         }
 
     override fun toString(): String = url.toResolvedUriString()
+
+    override fun getQueueId() = "${url.scheme}://${url.host}"
 
 }

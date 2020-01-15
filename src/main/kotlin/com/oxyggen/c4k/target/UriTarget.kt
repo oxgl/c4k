@@ -1,18 +1,19 @@
 package com.oxyggen.c4k.target
 
+import com.oxyggen.c4k.old.group.CrawlGroup
 import com.oxyggen.net.ContextURI
 import com.oxyggen.net.ResolvedURI
 import com.oxyggen.net.URI
 
 open class UriTarget(urlString: String, parent: CrawlTarget? = null) : CrawlTarget(parent) {
 
-    protected val resolvedUri: ResolvedURI?
+    protected val resolvedUri: ResolvedURI
 
-    /********************************************************************************
+    /**
      * Initialization
-     ********************************************************************************/
+     **/
     init {
-        val parentUri = if (parent is UriTarget) parent?.uri else null
+        val parentUri = if (parent is UriTarget) parent.uri else null
         val contextUri = if (parentUri is ContextURI) parentUri else null
 
         val parsedUri = URI.parse(urlString, contextUri)
@@ -20,27 +21,27 @@ open class UriTarget(urlString: String, parent: CrawlTarget? = null) : CrawlTarg
         resolvedUri = if (parsedUri is ResolvedURI) {
             parsedUri
         } else {
-            null
+            throw IllegalArgumentException("UriTarget: can't resolve ${urlString} into ResolvedURI")
         }
     }
 
-    /********************************************************************************
+    /**
      * The URI (no backing property)
-     ********************************************************************************/
-    open val uri get():ResolvedURI = resolvedUri!!
+     **/
+    open val uri get():ResolvedURI = resolvedUri
 
-    /********************************************************************************
+    /**
      * Target identifier should be the same for 2 targets pointing to the same
      * resource (so http://www.test.com/abc = http://www.test.com/def/../abc
-     ********************************************************************************/
+     **/
     open val targetIdentifier: String by lazy { uri.toString() }
 
-    /********************************************************************************
+    /**
      * Hash code
-     ********************************************************************************/
+     **/
     protected open val hashCode: Int by lazy { targetIdentifier.hashCode() }
 
-    override fun isValid(): Boolean = resolvedUri != null
+    override fun getQueueId(): String = ""
 
     override fun hashCode(): Int = hashCode
 
@@ -53,7 +54,7 @@ open class UriTarget(urlString: String, parent: CrawlTarget? = null) : CrawlTarg
                 false
             } else {
                 // Slow comparison
-                uri.equals(other.uri)
+                uri == other.uri
             }
         } else {
             false

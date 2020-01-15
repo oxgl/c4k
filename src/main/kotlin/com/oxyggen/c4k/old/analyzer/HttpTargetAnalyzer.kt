@@ -1,9 +1,10 @@
-package com.oxyggen.c4k.analyzer
+package com.oxyggen.c4k.old.analyzer
 
 import com.oxyggen.c4k.target.CrawlTarget
 import com.oxyggen.c4k.target.HttpTarget
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
+import io.ktor.client.features.UserAgent
 import io.ktor.client.request.request
 import io.ktor.client.response.HttpResponse
 import io.ktor.client.response.readText
@@ -12,6 +13,7 @@ import io.ktor.http.takeFrom
 import kotlinx.io.charsets.Charset
 import org.apache.logging.log4j.kotlin.Logging
 import org.jsoup.Jsoup
+import org.jsoup.nodes.Document
 import kotlin.reflect.KClass
 
 open class HttpTargetAnalyzer(val config: Config = Config()) : CrawlTargetAnalyzer(), Logging {
@@ -19,7 +21,8 @@ open class HttpTargetAnalyzer(val config: Config = Config()) : CrawlTargetAnalyz
     data class Config(
         val followRedirects: Boolean = true,
         val socketTimeout: Int = 20_000,
-        val connectTimeout: Int = 20_000
+        val connectTimeout: Int = 20_000,
+        val userAgent: String = "Mozilla/5.0 c4k/1.0"
     )
 
     override fun getHandledTargets(): Set<KClass<out HttpTarget>> = setOf(HttpTarget::class)
@@ -33,6 +36,9 @@ open class HttpTargetAnalyzer(val config: Config = Config()) : CrawlTargetAnalyz
                     followRedirects = config.followRedirects
                     socketTimeout = config.socketTimeout
                     connectTimeout = config.connectTimeout
+                }
+                install(UserAgent) {
+                    agent = config.userAgent
                 }
             }
 
@@ -58,7 +64,7 @@ open class HttpTargetAnalyzer(val config: Config = Config()) : CrawlTargetAnalyz
 
                 logger.debug { "Target ${target.uri.toResolvedUriString()} returned status ${response.status.value}" }
 
-                val targets = collectTargets(target, response)
+                val targets = analyzeResponse(target, response)
 
                 response.close()
                 client.close()
@@ -73,9 +79,42 @@ open class HttpTargetAnalyzer(val config: Config = Config()) : CrawlTargetAnalyz
         }
     }
 
-    open suspend fun collectTargets(target: HttpTarget, response: HttpResponse): Set<CrawlTarget> {
-        val result = mutableSetOf<CrawlTarget>()
+    /**
+     * Collect data from document
+     */
+    protected open suspend fun collectData(target: HttpTarget, doc: Document) {
 
+    }
+
+    /**
+     * Collect new targets from document
+     * @return the set of new targets
+     */
+    protected open suspend fun collectTargets(target: HttpTarget, doc: Document): Set<CrawlTarget> {
+        val result = mutableSetOf<CrawlTarget>()
+        doc.select("a")?.forEach {
+            val href = it.attr("href").trim()
+            if (href.isNotBlank()) {
+                try {
+                    val newTarget = HttpTarget(href, parent = target)
+                    when (newTarget.uri.scheme) {
+                        "http", "https" -> result.add(newTarget)
+                    }
+                } catch (e: IllegalArgumentException) {
+                    logger.warn("Malformed URI: $href on page ${target.targetIdentifier}")
+                }
+            }
+        }
+        return result
+    }
+
+    /**
+     * Analyze the HTTP response:
+     *  - parse document and collect the needed data
+     *  - parse document and collect all new targets
+     * @return the new targets
+     */
+    protected open suspend fun analyzeResponse(target: HttpTarget, response: HttpResponse): Set<CrawlTarget> =
         when (response.status) {
             HttpStatusCode.OK -> {
                 val html = try {
@@ -86,22 +125,11 @@ open class HttpTargetAnalyzer(val config: Config = Config()) : CrawlTargetAnalyz
 
                 val doc = Jsoup.parse(html)
 
-                doc.select("a")?.forEach {
-                    val href = it.attr("href").trim()
-                    if (href.isNotBlank()) {
-                        val newTarget = HttpTarget(href, parent = target)
+                collectData(target, doc)
 
-                        if (newTarget.isValid()) {
-                            when (newTarget.uri.scheme) {
-                                "http", "https" -> result.add(newTarget)
-                            }
-                        } else {
-                            logger.warn("Malformed URI: $href on page ${target.targetIdentifier}")
-                        }
-                    }
-                }
+                collectTargets(target, doc)
             }
+            else -> setOf<CrawlTarget>()
         }
-        return result
-    }
+
 }

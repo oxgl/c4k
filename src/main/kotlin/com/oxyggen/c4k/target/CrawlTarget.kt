@@ -1,5 +1,7 @@
 package com.oxyggen.c4k.target
 
+import com.oxyggen.c4k.old.group.CrawlGroup
+
 abstract class CrawlTarget(val parent: CrawlTarget? = null) {
 
     val depth: Int
@@ -12,9 +14,6 @@ abstract class CrawlTarget(val parent: CrawlTarget? = null) {
         }
     }
 
-    /********************************************************************************
-     * @return true if target is valid
-     ********************************************************************************/
-    abstract fun isValid(): Boolean
+    abstract fun getQueueId(): String
 
 }

@@ -1,20 +1,18 @@
-package com.oxyggen.c4k.engine
+package com.oxyggen.c4k.old.engine
 
-import com.oxyggen.c4k.analyzer.CrawlTargetAnalyzer
+import com.oxyggen.c4k.old.analyzer.CrawlTargetAnalyzer
 import com.oxyggen.c4k.target.CrawlTarget
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.kotlin.Logging
 import java.util.*
 import kotlin.reflect.KClass
-import kotlin.reflect.full.createInstance
 
 
-class CrawlerJobHandler(val engine: CrawlerEngine) : Logging {
+class CrawlerJobQueue(val engine: CrawlerEngine) : Logging {
 
     var executedJobs = 0
 
