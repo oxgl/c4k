@@ -2,7 +2,7 @@ package com.oxyggen.c4k.old.engine
 
 import com.oxyggen.c4k.old.analyzer.CrawlTargetAnalyzer
 import com.oxyggen.c4k.old.analyzer.HttpTargetAnalyzer
-import com.oxyggen.c4k.target.CrawlTarget
+import com.oxyggen.c4k.target.Target
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import org.apache.logging.log4j.kotlin.Logging
@@ -31,9 +31,9 @@ class CrawlerEngine(val config: Config = Config()) : Logging {
     fun registerTargetAnalyzer(analyzer: CrawlTargetAnalyzer) =
         jobQueue.registerTargetAnalyzer(analyzer)
 
-    fun addTarget(target: CrawlTarget) = jobQueue.pushTargets(setOf(target))
+    fun addTarget(target: Target) = jobQueue.pushTargets(setOf(target))
 
-    fun addTargets(targets: Set<CrawlTarget>) = jobQueue.pushTargets(targets)
+    fun addTargets(targets: Set<Target>) = jobQueue.pushTargets(targets)
 
     suspend fun execute(scope: CoroutineScope) {
         // Register at least analyzer for HttpTarget

@@ -1,6 +1,6 @@
 package com.oxyggen.c4k.old.analyzer
 
-import com.oxyggen.c4k.target.CrawlTarget
+import com.oxyggen.c4k.target.Target
 import com.oxyggen.c4k.target.HttpTarget
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
@@ -27,7 +27,7 @@ open class HttpTargetAnalyzer(val config: Config = Config()) : CrawlTargetAnalyz
 
     override fun getHandledTargets(): Set<KClass<out HttpTarget>> = setOf(HttpTarget::class)
 
-    override suspend fun analyze(target: CrawlTarget): Set<CrawlTarget> = when (target) {
+    override suspend fun analyze(target: Target): Set<Target> = when (target) {
         is HttpTarget -> {
             logger.debug { ">>> HTTP Crawler started for target ${target.uri.toString()}" }
 
@@ -90,8 +90,8 @@ open class HttpTargetAnalyzer(val config: Config = Config()) : CrawlTargetAnalyz
      * Collect new targets from document
      * @return the set of new targets
      */
-    protected open suspend fun collectTargets(target: HttpTarget, doc: Document): Set<CrawlTarget> {
-        val result = mutableSetOf<CrawlTarget>()
+    protected open suspend fun collectTargets(target: HttpTarget, doc: Document): Set<Target> {
+        val result = mutableSetOf<Target>()
         doc.select("a")?.forEach {
             val href = it.attr("href").trim()
             if (href.isNotBlank()) {
@@ -114,7 +114,7 @@ open class HttpTargetAnalyzer(val config: Config = Config()) : CrawlTargetAnalyz
      *  - parse document and collect all new targets
      * @return the new targets
      */
-    protected open suspend fun analyzeResponse(target: HttpTarget, response: HttpResponse): Set<CrawlTarget> =
+    protected open suspend fun analyzeResponse(target: HttpTarget, response: HttpResponse): Set<Target> =
         when (response.status) {
             HttpStatusCode.OK -> {
                 val html = try {
@@ -129,7 +129,7 @@ open class HttpTargetAnalyzer(val config: Config = Config()) : CrawlTargetAnalyz
 
                 collectTargets(target, doc)
             }
-            else -> setOf<CrawlTarget>()
+            else -> setOf<Target>()
         }
 
 }

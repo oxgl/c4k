@@ -1,10 +1,9 @@
 package com.oxyggen.c4k.target
 
-import com.oxyggen.c4k.old.group.CrawlGroup
 import com.oxyggen.net.HttpURL
 import io.ktor.http.HttpMethod
 
-open class HttpTarget(urlString: String, val method: HttpMethod = HttpMethod.Get, parent: CrawlTarget? = null) :
+open class HttpTarget(urlString: String, val method: HttpMethod = HttpMethod.Get, parent: Target? = null) :
     UriTarget(urlString, parent) {
 
     init {

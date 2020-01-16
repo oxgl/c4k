@@ -1,10 +1,10 @@
 package com.oxyggen.c4k.store
 
-import com.oxyggen.c4k.target.CrawlTarget
+import com.oxyggen.c4k.target.Target
 import kotlinx.coroutines.Deferred
 
-open class CrawlTargetCoroutineJob(target: CrawlTarget, val deferred: Deferred<Set<CrawlTarget>>) :
-    CrawlTargetJob(target) {
+open class TargetCoroutineJob(target: Target, val deferred: Deferred<Set<Target>>) :
+    TargetJob(target) {
     override fun isCompleted(): Boolean = deferred.isCompleted
     override fun isCancelled(): Boolean = deferred.isCancelled
 }

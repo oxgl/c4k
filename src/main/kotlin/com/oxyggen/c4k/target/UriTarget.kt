@@ -1,11 +1,10 @@
 package com.oxyggen.c4k.target
 
-import com.oxyggen.c4k.old.group.CrawlGroup
 import com.oxyggen.net.ContextURI
 import com.oxyggen.net.ResolvedURI
 import com.oxyggen.net.URI
 
-open class UriTarget(urlString: String, parent: CrawlTarget? = null) : CrawlTarget(parent) {
+open class UriTarget(urlString: String, parent: Target? = null) : Target(parent) {
 
     protected val resolvedUri: ResolvedURI
 

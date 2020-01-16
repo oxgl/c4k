@@ -1,6 +1,6 @@
 package com.oxyggen.c4k.config
 
-open class HttpConfig : CrawlConfig {
+open class HttpConfig : Config {
 
     companion object {
         const val POLITENESS_DELAY = "HTTP.politenessDelay"

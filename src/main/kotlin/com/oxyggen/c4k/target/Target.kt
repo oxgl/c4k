@@ -1,8 +1,6 @@
 package com.oxyggen.c4k.target
 
-import com.oxyggen.c4k.old.group.CrawlGroup
-
-abstract class CrawlTarget(val parent: CrawlTarget? = null) {
+abstract class Target(val parent: Target? = null) {
 
     val depth: Int
 

@@ -1,39 +1,38 @@
 package com.oxyggen.c4k.engine
 
-import com.oxyggen.c4k.config.CrawlConfig
-import com.oxyggen.c4k.qa.CrawlQueueAnalyzer
-import com.oxyggen.c4k.target.CrawlTarget
+import com.oxyggen.c4k.config.Config
+import com.oxyggen.c4k.event.EngineEvent
+import com.oxyggen.c4k.event.QueueEvent
+import com.oxyggen.c4k.qa.QueueAnalyzer
+import com.oxyggen.c4k.target.Target
 import com.oxyggen.matcher.GlobMatcher
 import com.oxyggen.matcher.Matcher
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.apache.logging.log4j.kotlin.Logging
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.createInstance
 import kotlin.reflect.full.primaryConstructor
 
-open class CrawlEngine(val config: CrawlConfig) : Logging {
+open class CrawlEngine(val config: Config, val coroutineScope: CoroutineScope = GlobalScope) : Logging {
 
     /**
      *
      */
     protected data class QAEntry(
         val matcher: Matcher,
-        val queueAnalyzerClass: KClass<out CrawlQueueAnalyzer>,
+        val queueAnalyzerClass: KClass<out QueueAnalyzer>,
         val priority: Int
     )
 
     protected val registeredQAs: MutableList<QAEntry> = mutableListOf()
 
-    protected val rerouteChannel = Channel<CrawlEvent>(Channel.UNLIMITED)
+    protected val engineChannel = Channel<EngineEvent>(Channel.UNLIMITED)
 
+    protected val queues: MutableMap<String, QueueAnalyzer> = mutableMapOf()
 
-    protected val queues: MutableMap<String, CrawlQueueAnalyzer> = mutableMapOf()
-
-    protected fun getQueueAnalyzer(queueId: String): CrawlQueueAnalyzer? {
+    protected fun getQueueAnalyzer(queueId: String): QueueAnalyzer? {
 
         var result = queues[queueId]
 
@@ -47,9 +46,10 @@ open class CrawlEngine(val config: CrawlConfig) : Logging {
 
                 qaConstructor?.parameters?.forEach {
                     when (it.name) {
+                        "coroutineScope" -> qaConstructorParams[it] = coroutineScope
                         "queueId" -> qaConstructorParams[it] = queueId
-                        "config" -> config
-                        "rerouteChannel" -> qaConstructorParams[it] = rerouteChannel
+                        "config" -> qaConstructorParams[it] = config
+                        "engineChannel" -> qaConstructorParams[it] = engineChannel
                     }
                 }
 
@@ -68,7 +68,7 @@ open class CrawlEngine(val config: CrawlConfig) : Logging {
 
     open fun registerQueueAnalyzer(
         matcher: Matcher,
-        queueAnalyzerClass: KClass<out CrawlQueueAnalyzer>,
+        queueAnalyzerClass: KClass<out QueueAnalyzer>,
         priority: Int = 0
     ) {
         registeredQAs.add(QAEntry(matcher, queueAnalyzerClass, priority))
@@ -77,30 +77,55 @@ open class CrawlEngine(val config: CrawlConfig) : Logging {
 
     open fun registerQueueAnalyzer(
         globPattern: String,
-        queueAnalyzerClass: KClass<out CrawlQueueAnalyzer>,
+        queueAnalyzerClass: KClass<out QueueAnalyzer>,
         priority: Int = 0
     ) = registerQueueAnalyzer(GlobMatcher(globPattern), queueAnalyzerClass, priority)
 
-    open fun addTarget(target: CrawlTarget): Boolean = rerouteChannel.offer(CrawlEvent(CrawlEvent.Type.REROUTE, target))
+    open fun addTarget(target: Target): Boolean = engineChannel.offer(
+        EngineEvent(
+            EngineEvent.Type.REROUTE,
+            target
+        )
+    )
 
     open suspend fun router() {
         logger.debug { ">> Router started" }
         var isActive = true
         while (isActive) {
-            val event = rerouteChannel.receive()
-            logger.debug { "Router event received: $event" }
+            val event = engineChannel.receive()
+            logger.debug { "Engine event received: $event" }
             when (event.type) {
-                CrawlEvent.Type.REROUTE -> getQueueAnalyzer(event.target!!.getQueueId())?.receiveChannel?.send(event)
-                CrawlEvent.Type.ABORT -> isActive = false
+                EngineEvent.Type.REROUTE -> {
+                    // Get QueueAnalyzer for given QueueId
+                    val qa = getQueueAnalyzer(event.target!!.getQueueId())
+
+                    // Send event into analyzer if
+                    qa?.inputChannel?.send(
+                        QueueEvent(
+                            QueueEvent.Type.REROUTE_TARGET,
+                            event.target
+                        )
+                    )
+                }
+
+                EngineEvent.Type.ABORT -> {
+                    queues.forEach {
+                        it.value.inputChannel.send(QueueEvent(QueueEvent.Type.ABORT))
+                    }
+                    isActive = false
+                }
             }
         }
-        logger.debug { ">> Logger exited" }
+        logger.debug { "<< Router exited" }
     }
 
-    open suspend fun execute(scope: CoroutineScope) {
-        scope.launch { router() }
-        delay(1000)
-
+    open suspend fun execute(): Unit {
+        router()
     }
 
+    open suspend fun stop(): Unit {
+        engineChannel.send(EngineEvent(EngineEvent.Type.ABORT))
+    }
+
+    open fun executeBlocking() = runBlocking(coroutineScope.coroutineContext) { execute() }
 }

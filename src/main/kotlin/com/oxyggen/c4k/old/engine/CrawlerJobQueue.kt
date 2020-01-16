@@ -1,7 +1,7 @@
 package com.oxyggen.c4k.old.engine
 
 import com.oxyggen.c4k.old.analyzer.CrawlTargetAnalyzer
-import com.oxyggen.c4k.target.CrawlTarget
+import com.oxyggen.c4k.target.Target
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -17,12 +17,12 @@ class CrawlerJobQueue(val engine: CrawlerEngine) : Logging {
     var executedJobs = 0
 
     private val mutex = Mutex()
-    private var targetsWaiting: Queue<CrawlTarget> = ArrayDeque<CrawlTarget>()
-    private var targets: MutableSet<CrawlTarget> = mutableSetOf()
-    private var targetAnalyzers: MutableMap<KClass<out CrawlTarget>, CrawlTargetAnalyzer> = mutableMapOf()
+    private var targetsWaiting: Queue<Target> = ArrayDeque<Target>()
+    private var targets: MutableSet<Target> = mutableSetOf()
+    private var targetAnalyzers: MutableMap<KClass<out Target>, CrawlTargetAnalyzer> = mutableMapOf()
     private var activeJobs: MutableSet<CrawlerJobEntry> = mutableSetOf()
 
-    private fun getTargetAnalyzer(target: CrawlTarget): CrawlTargetAnalyzer? = targetAnalyzers[target::class]
+    private fun getTargetAnalyzer(target: Target): CrawlTargetAnalyzer? = targetAnalyzers[target::class]
 
     fun registerTargetAnalyzer(analyzer: CrawlTargetAnalyzer, replace: Boolean = true) {
 
@@ -35,7 +35,7 @@ class CrawlerJobQueue(val engine: CrawlerEngine) : Logging {
         }
     }
 
-    fun pushTargets(newTarget: Set<CrawlTarget>) {
+    fun pushTargets(newTarget: Set<Target>) {
         newTarget.forEach {
             if (targets.contains(it)) {
                 logger.debug { "Target already in jobs, skipping $it..." }
@@ -75,9 +75,9 @@ class CrawlerJobQueue(val engine: CrawlerEngine) : Logging {
 
     fun getTargetCount() = targets.size
 
-    suspend fun receiveNewTargets(maxDepth: Int = -1): Set<CrawlTarget>? {
+    suspend fun receiveNewTargets(maxDepth: Int = -1): Set<Target>? {
 
-        var result: MutableSet<CrawlTarget>? = null
+        var result: MutableSet<Target>? = null
 
         val finishedJobs = mutableSetOf<CrawlerJobEntry>()
 
@@ -85,7 +85,7 @@ class CrawlerJobQueue(val engine: CrawlerEngine) : Logging {
             if (!it.job.isActive) {
                 finishedJobs.add(it)
                 if (it.job.isCompleted) {
-                    if (result == null) result = mutableSetOf<CrawlTarget>()
+                    if (result == null) result = mutableSetOf<Target>()
                     val newTargets = it.job.await()
                     newTargets.forEach {
                         if (maxDepth <= 0 || it.depth <= maxDepth) {
