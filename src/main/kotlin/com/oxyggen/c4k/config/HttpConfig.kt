@@ -1,25 +1,17 @@
 package com.oxyggen.c4k.config
 
-open class HttpConfig : Config {
+open class HttpConfig(config: Config? = null) : GenericConfig(config) {
 
     companion object {
         const val POLITENESS_DELAY = "HTTP.politenessDelay"
         const val MAX_DEPTH = "HTTP.maxDepth"
     }
 
-    private val values: MutableMap<String, Any> = mutableMapOf()
-
-    var politenessDelay: Int = 200
-    var maxDepth: Int = -1
-
-    override fun get(key: String): Any? = when (key) {
-        POLITENESS_DELAY -> politenessDelay
-        MAX_DEPTH -> maxDepth
-        else ->
-            values[key]
+    init {
+        if (!values.containsKey(POLITENESS_DELAY)) values.set(POLITENESS_DELAY, 200)
+        if (!values.containsKey(MAX_DEPTH)) values.set(POLITENESS_DELAY, -1)
     }
 
-    override fun containsKey(key: String): Boolean = get(key) != null
+    override fun getObjectCopy(): GenericConfig = HttpConfig(this)
 
-    override fun getOrDefault(key: String, defaultValue: Any): Any? = values[key] ?: defaultValue
 }

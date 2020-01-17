@@ -18,8 +18,7 @@ open class QueueAnalyzer(
     protected val queueId: String,
     protected val config: Config,
     protected val engineChannel: SendChannel<EngineEvent>
-) :
-    Logging {
+) : Logging {
 
     protected val queueChannel = Channel<QueueEvent>(Channel.UNLIMITED)
     protected val schedulingChannel: Channel<Long> = Channel<Long>()
@@ -54,7 +53,7 @@ open class QueueAnalyzer(
     }
 
     open fun startup() {
-        with (coroutineScope) {
+        with(coroutineScope) {
             launch { queueReceiver() }
         }
 
