@@ -9,7 +9,7 @@ open class GenericConfig(config: Config? = null) : Config {
             val result: MutableMap<String, Any> = mutableMapOf()
             config.keys.forEach {
                 val v = config[it]
-                if (v != null) result[it] = it
+                if (v != null) result[it] = v
             }
             result
         } else {

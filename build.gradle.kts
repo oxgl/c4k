@@ -12,7 +12,7 @@ val urilibVersion = "1.0.11"
 
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.3.50"
+    kotlin("jvm") version "1.3.50"
 }
 
 group = "com.oxyggen.c4k"

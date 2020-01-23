@@ -11,11 +11,12 @@ class HttpRobotsTxt(val content: String, val userAgent: String) {
         const val PARAM_RULE_DISALLOW = "disallow"
         const val PARAM_SITEMAP = "sitemap"
         const val PARAM_CRAWL_DELAY = "crawl-delay"
+        val RULE_ALLOW_ALL = Rule(type = RuleType.ALLOW, pathPattern = "/", pathMatcher = GlobMatcher("/*"))
     }
 
     enum class RuleType { ALLOW, DISALLOW }
 
-    data class Rule(val type: RuleType, val pathPattern: String, val pathMatcher: Matcher)
+    data class Rule(val type: RuleType = RuleType.ALLOW, val pathPattern: String, val pathMatcher: Matcher)
 
     data class Group(val userAgents: List<String>, val rules: List<Rule>, val params: Map<String, String>)
 
@@ -61,11 +62,13 @@ class HttpRobotsTxt(val content: String, val userAgent: String) {
 
     }
 
-    val group: Group?
+    val group: Group = parseContent(content, userAgent)
 
-    init {
-        group = parseContent(content, userAgent)
-    }
+    val politenessDelay: Int
+        get() = group.params[PARAM_CRAWL_DELAY]?.toIntOrNull()?.times(1000) ?: -1
+
+    val sitemap: String
+        get() = group.params[PARAM_SITEMAP] ?: ""
 
     private fun pathPatternToGlobMatcher(pathPattern: String): GlobMatcher = GlobMatcher(
         if (pathPattern.endsWith('$')) {
@@ -77,7 +80,7 @@ class HttpRobotsTxt(val content: String, val userAgent: String) {
         }, ignoreCase = false
     )
 
-    private fun parseContent(content: String, userAgent: String): Group? {
+    private fun parseContent(content: String, userAgent: String): Group {
         val groups: MutableList<Group> = mutableListOf()
 
         // FEFF is the Unicode char represented by the UTF-8 byte order mark (EF BB BF)
@@ -124,7 +127,11 @@ class HttpRobotsTxt(val content: String, val userAgent: String) {
             }
         }
         // If gb contains valid group => add to groups
-        return gb.getGroupOrClear(userAgent)
+        return gb.getGroupOrClear(userAgent) ?: Group(
+            userAgents = listOf("*"),
+            rules = listOf(RULE_ALLOW_ALL),
+            params = mapOf()
+        )
     }
 
     fun isPathAllowed(path: String): Boolean {

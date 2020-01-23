@@ -18,7 +18,7 @@ internal class CrawlEngineTest {
             e.registerQueueAnalyzer("http://*", HttpQueueAnalyzer::class)
             e.addTarget(HttpTarget("https://google.com"))
             launch { e.execute() }
-            delay(2000)
+            delay(200000)
             launch { e.stop() }
         }
     }

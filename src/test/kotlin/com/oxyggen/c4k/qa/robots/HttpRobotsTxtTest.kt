@@ -10,6 +10,13 @@ internal class HttpRobotsTxtTest {
         val rs = URL("https://www.google.com/robots.txt").readText()
         val rtxt = HttpRobotsTxt(rs, "Oxyg")
 
-        println(rtxt.isPathAllowed("/?helpme"))
+        assertTrue(rtxt.isPathAllowed("/"))
+        assertFalse(rtxt.isPathAllowed("/?"))
+        assertFalse(rtxt.isPathAllowed("/?helpme"))
+        assertTrue(rtxt.isPathAllowed("/maps?smallfile=xxx"))
+        assertTrue(rtxt.isPathAllowed("/maps/d/"))
+        assertTrue(rtxt.isPathAllowed("/maps/d/x.html"))
+        assertTrue(rtxt.isPathAllowed("/maps/d.html"))
+
     }
 }

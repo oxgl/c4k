@@ -52,11 +52,10 @@ open class QueueAnalyzer(
         logger.debug { ">> Queue $queueId exiting..." }
     }
 
-    open fun startup() {
-        with(coroutineScope) {
-            launch { queueReceiver() }
-        }
+    protected open fun shouldVisit(target: Target): Boolean = true
 
+    open suspend fun startup() {
+        queueReceiver()
     }
 
 }

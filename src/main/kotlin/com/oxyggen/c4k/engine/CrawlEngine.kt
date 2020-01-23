@@ -9,6 +9,8 @@ import com.oxyggen.matcher.GlobMatcher
 import com.oxyggen.matcher.Matcher
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.kotlin.Logging
 import kotlin.reflect.KClass
 import kotlin.reflect.KParameter
@@ -31,12 +33,12 @@ open class CrawlEngine(val config: Config, val coroutineScope: CoroutineScope = 
     protected val engineChannel = Channel<EngineEvent>(Channel.UNLIMITED)
 
     protected val queues: MutableMap<String, QueueAnalyzer> = mutableMapOf()
+    protected val queuesMutex = Mutex()
 
-    protected fun getQueueAnalyzer(queueId: String): QueueAnalyzer? {
+    protected suspend fun getQueueAnalyzer(queueId: String): QueueAnalyzer? = queuesMutex.withLock {
+        var queueAnalyzer = queues[queueId]
 
-        var result = queues[queueId]
-
-        if (result == null) {
+        if (queueAnalyzer == null) {
             val qaClass = registeredQAs.find { it.matcher.matches(queueId) }?.queueAnalyzerClass
             if (qaClass != null) {
                 // Try to create QA Instance
@@ -53,14 +55,14 @@ open class CrawlEngine(val config: Config, val coroutineScope: CoroutineScope = 
                     }
                 }
 
-                result = qaConstructor?.callBy(qaConstructorParams) ?: qaClass.createInstance()
+                queueAnalyzer = qaConstructor?.callBy(qaConstructorParams) ?: qaClass.createInstance()
 
                 logger.debug { "New QueueAnalyzer with class $qaClass was created for queue $queueId" }
-                result.startup()
-                queues[queueId] = result
+                queueAnalyzer.startup()
+                queues[queueId] = queueAnalyzer
             }
         }
-        return result
+        queueAnalyzer
     }
 
 
