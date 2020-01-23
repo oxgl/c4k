@@ -55,11 +55,9 @@ open class CrawlEngine(val config: Config, val coroutineScope: CoroutineScope = 
 
                 result = qaConstructor?.callBy(qaConstructorParams) ?: qaClass.createInstance()
 
-                if (result != null) {
-                    logger.debug { "New QueueAnalyzer with class $qaClass was created for queue $queueId" }
-                    result.startup()
-                    queues[queueId] = result
-                }
+                logger.debug { "New QueueAnalyzer with class $qaClass was created for queue $queueId" }
+                result.startup()
+                queues[queueId] = result
             }
         }
         return result

@@ -7,8 +7,9 @@ import java.net.URL
 internal class HttpRobotsTxtTest {
     @Test
     fun `test robots txt parsing`() {
-        val rs = URL("https://en.wikipedia.org/robots.txt").readText()
-        val rtxt = HttpRobotsTxt(rs)
-        println(rtxt)
+        val rs = URL("https://www.google.com/robots.txt").readText()
+        val rtxt = HttpRobotsTxt(rs, "Oxyg")
+
+        println(rtxt.isPathAllowed("/?helpme"))
     }
 }

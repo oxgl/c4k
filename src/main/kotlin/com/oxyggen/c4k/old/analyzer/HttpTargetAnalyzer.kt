@@ -6,11 +6,10 @@ import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.client.features.UserAgent
 import io.ktor.client.request.request
-import io.ktor.client.response.HttpResponse
 import io.ktor.client.response.readText
+import io.ktor.client.statement.HttpStatement
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.takeFrom
-import kotlinx.io.charsets.Charset
 import org.apache.logging.log4j.kotlin.Logging
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -27,57 +26,58 @@ open class HttpTargetAnalyzer(val config: Config = Config()) : CrawlTargetAnalyz
 
     override fun getHandledTargets(): Set<KClass<out HttpTarget>> = setOf(HttpTarget::class)
 
-    override suspend fun analyze(target: Target): Set<Target> = when (target) {
-        is HttpTarget -> {
-            logger.debug { ">>> HTTP Crawler started for target ${target.uri.toString()}" }
+    override suspend fun analyze(target: Target): Set<Target> = setOf()
+    /*= when (target) {
+is HttpTarget -> {
+    logger.debug { ">>> HTTP Crawler started for target ${target.uri.toString()}" }
 
-            val client = HttpClient(Apache) {
-                engine {
-                    followRedirects = config.followRedirects
-                    socketTimeout = config.socketTimeout
-                    connectTimeout = config.connectTimeout
-                }
-                install(UserAgent) {
-                    agent = config.userAgent
-                }
-            }
-
-            val targetUri = target.uri.toResolvedUriString()
-
-            val response = try {
-                client.request<HttpResponse>() {
-                    url.takeFrom(targetUri)
-                    method = target.method
-                }
-            } catch (e: Exception) {
-                logger.warn("Error when downloading target ${targetUri}: ${e.message}")
-                null
-            }
-
-            if (response == null) {
-
-                client.close()
-
-                setOf()
-
-            } else {
-
-                logger.debug { "Target ${target.uri.toResolvedUriString()} returned status ${response.status.value}" }
-
-                val targets = analyzeResponse(target, response)
-
-                response.close()
-                client.close()
-
-                logger.debug { "<<< HTTP Crawler finished" }
-
-                targets
-            }
+    val client = HttpClient(Apache) {
+        engine {
+            followRedirects = config.followRedirects
+            socketTimeout = config.socketTimeout
+            connectTimeout = config.connectTimeout
         }
-        else -> {
-            setOf();
+        install(UserAgent) {
+            agent = config.userAgent
         }
     }
+
+    val targetUri = target.uri.toResolvedUriString()
+
+    val response = try {
+        client.request<HttpStatement>() {
+            url.takeFrom(targetUri)
+            method = target.method
+        }
+    } catch (e: Exception) {
+        logger.warn("Error when downloading target ${targetUri}: ${e.message}")
+        null
+    }
+
+    if (response == null) {
+
+        client.close()
+
+        setOf()
+
+    } else {
+
+        logger.debug { "Target ${target.uri.toResolvedUriString()} returned status ${response.status.value}" }
+
+        val targets = analyzeResponse(target, response)
+
+        response.close()
+        client.close()
+
+        logger.debug { "<<< HTTP Crawler finished" }
+
+        targets
+    }
+}
+else -> {
+    setOf();
+}
+}*/
 
     /**
      * Collect data from document
@@ -114,7 +114,7 @@ open class HttpTargetAnalyzer(val config: Config = Config()) : CrawlTargetAnalyz
      *  - parse document and collect all new targets
      * @return the new targets
      */
-    protected open suspend fun analyzeResponse(target: HttpTarget, response: HttpResponse): Set<Target> =
+    /*protected open suspend fun analyzeResponse(target: HttpTarget, response: HttpResponse): Set<Target> =
         when (response.status) {
             HttpStatusCode.OK -> {
                 val html = try {
@@ -130,6 +130,6 @@ open class HttpTargetAnalyzer(val config: Config = Config()) : CrawlTargetAnalyz
                 collectTargets(target, doc)
             }
             else -> setOf<Target>()
-        }
+        }*/
 
 }

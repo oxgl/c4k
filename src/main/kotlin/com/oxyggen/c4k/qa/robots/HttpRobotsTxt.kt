@@ -1,6 +1,9 @@
 package com.oxyggen.c4k.qa.robots
 
-class HttpRobotsTxt(val content: String) {
+import com.oxyggen.matcher.GlobMatcher
+import com.oxyggen.matcher.Matcher
+
+class HttpRobotsTxt(val content: String, val userAgent: String) {
 
     companion object {
         const val PARAM_USER_AGENT = "user-agent"
@@ -12,7 +15,7 @@ class HttpRobotsTxt(val content: String) {
 
     enum class RuleType { ALLOW, DISALLOW }
 
-    data class Rule(val type: RuleType, val pathPattern: String)
+    data class Rule(val type: RuleType, val pathPattern: String, val pathMatcher: Matcher)
 
     data class Group(val userAgents: List<String>, val rules: List<Rule>, val params: Map<String, String>)
 
@@ -36,46 +39,114 @@ class HttpRobotsTxt(val content: String) {
             params.clear()
         }
 
-        fun toGroup(): Group = Group(userAgents.toList(), rules.toList(), params.toMap())
+        fun isValidForAgent(userAgent: String): Boolean {
+            if (isValid) {
+                userAgents.forEach {
+                    val gm = GlobMatcher(it, ignoreCase = true)
+                    if (gm.matches(userAgent))
+                        return true
+                }
+            }
+            return false
+        }
+
+        fun getGroupOrClear(userAgent: String): Group? {
+            userAgents.forEach {
+                val gm = GlobMatcher(it, ignoreCase = true)
+                if (gm.matches(userAgent)) return Group(userAgents.toList(), rules.toList(), params.toMap())
+            }
+            clear()
+            return null
+        }
 
     }
 
-    val groups: List<Group>
+    val group: Group?
 
     init {
-        groups = parseContent(content)
+        group = parseContent(content, userAgent)
     }
 
-    private fun parseContent(content: String): List<Group> {
+    private fun pathPatternToGlobMatcher(pathPattern: String): GlobMatcher = GlobMatcher(
+        if (pathPattern.endsWith('$')) {
+            pathPattern.replace("?", "\\?").dropLast(1)
+        } else {
+            pathPattern.replace("?", "\\?") + "*"
+        }, ignoreCase = false
+    )
+
+    private fun parseContent(content: String, userAgent: String): Group? {
         val groups: MutableList<Group> = mutableListOf()
-        val lines = content.replace("\r", "").split('\n')
+
+        // FEFF is the Unicode char represented by the UTF-8 byte order mark (EF BB BF)
+        // UTF-8	EF BB BF	239 187 191
+        val lines = content.removePrefix("\uFEFF").replace("\r", "").split('\n')
 
         val gb = GroupBuilder()
-        lines.forEach {
-            if (!it.trim().startsWith("#")) {
-                val param = it.substringBefore(':').trim().toLowerCase()
-                val value = it.substringAfter(':', "").trim()
+        lines.forEach lit@{
+            val line = it.trim()
+            if (line.isNotBlank() && !line.startsWith('#')) {
+                val param = line.substringBefore(':').trim().toLowerCase()
+                val value = line.substringAfter(':', "").trim()
                 when (param) {
                     PARAM_USER_AGENT -> {
                         if (!gb.isUserAgentSectionOpened) {
-                            if (gb.isValid) groups.add(gb.toGroup())
-                            gb.clear()
+                            // User agent section is already closed,
+                            // so this is the start of new group
+                            val group = gb.getGroupOrClear(userAgent)
+                            if (group != null)
+                                return group
                         }
                         gb.userAgents.add(value)
                     }
 
-                    PARAM_RULE_ALLOW -> if (gb.isUserAgentSectionFilled) gb.rules.add(Rule(RuleType.ALLOW, value))
+                    PARAM_RULE_ALLOW -> if (gb.isUserAgentSectionFilled) gb.rules.add(
+                        Rule(
+                            RuleType.ALLOW,
+                            value,
+                            pathPatternToGlobMatcher(value)
+                        )
+                    )
 
-                    PARAM_RULE_DISALLOW -> if (gb.isUserAgentSectionFilled) gb.rules.add(Rule(RuleType.DISALLOW, value))
+                    PARAM_RULE_DISALLOW -> if (gb.isUserAgentSectionFilled) gb.rules.add(
+                        Rule(
+                            RuleType.DISALLOW,
+                            value,
+                            pathPatternToGlobMatcher(value)
+                        )
+                    )
 
                     else -> if (param.isNotBlank() && gb.isUserAgentSectionFilled) gb.params[param.trim().toLowerCase()] =
                         value.trim()
                 }
             }
         }
-        if (gb.isValid) groups.add(gb.toGroup())
-        return groups
+        // If gb contains valid group => add to groups
+        return gb.getGroupOrClear(userAgent)
     }
 
+    fun isPathAllowed(path: String): Boolean {
+        group?.rules?.forEach {
+            if (it.pathMatcher.matches(path)) {
+                // Rule found => return type
+                return it.type == RuleType.ALLOW
+            }
+        }
+        // Disable rule not found => exi
+        return true
+    }
 
+    override fun toString(): String {
+        var result = super.toString()
+        if (group != null) {
+            if (group.rules.isEmpty()) {
+                "[0 rules = ALLOW *]"
+            } else {
+                result += "[ ${group.rules.size} rules ]"
+            }
+        } else {
+            result += "[0 rules = ALLOW *]"
+        }
+        return result
+    }
 }
