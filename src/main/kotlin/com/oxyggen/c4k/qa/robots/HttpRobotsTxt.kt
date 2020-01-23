@@ -69,6 +69,8 @@ class HttpRobotsTxt(val content: String, val userAgent: String) {
 
     private fun pathPatternToGlobMatcher(pathPattern: String): GlobMatcher = GlobMatcher(
         if (pathPattern.endsWith('$')) {
+            // The ? has a special meaning in Glob -> any character, but it's a "standard"
+            // character in URL, so escape it
             pathPattern.replace("?", "\\?").dropLast(1)
         } else {
             pathPattern.replace("?", "\\?") + "*"
