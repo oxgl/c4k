@@ -25,9 +25,7 @@ open class HttpQueueAnalyzer(
     val httpConfig = HttpConfig(config)
     lateinit var robotsTxt: HttpRobotsTxt
 
-    var politenessDelay = if (robotsTxt.politenessDelay > 0) robotsTxt.politenessDelay else httpConfig.politenessDelay
-
-    open fun createHttpClient(): HttpClient = HttpClient(Apache) {
+    fun createHttpClient(): HttpClient = HttpClient(Apache) {
         engine {
             socketTimeout = httpConfig.connectionTimeout
             connectTimeout = httpConfig.connectionTimeout
@@ -46,21 +44,31 @@ open class HttpQueueAnalyzer(
         }
 
     open suspend fun processRobotsTxt() {
+        logger.debug { "QA $queueId/robots.txt processing robots.txt file..." }
         val client = createHttpClient()
         val response = try {
             client.get<HttpResponse>("$queueId/robots.txt")
         } catch (e: Throwable) {
+            logger.debug { "QA $queueId/robots.txt HttpClient threw an exception: ${e.toString()}" }
             null
         }
 
-        if (response != null && response.status.value in 200..299) {
-            val content = response.readText()
-            robotsTxt = HttpRobotsTxt(content, httpConfig.userAgent)
-            logger.debug("QueueId ${queueId}, robot.txt found: ${robotsTxt.group?.rules?.size}")
+        if (response != null) {
+            if (response.status.value in 200..299) {
+                val content = response.readText()
+                robotsTxt = HttpRobotsTxt(content, httpConfig.userAgent)
+                logger.debug("QA $queueId/robots.txt, rule count: ${robotsTxt.group?.rules?.size}")
+            } else {
+                logger.debug("QA $queueId/robots.txt, returned status code: ${response.status.value}")
+            }
         }
     }
 
+    override fun getTargetSchedulerTimeout(): Long =
+        if (robotsTxt.politenessDelay > 0) robotsTxt.politenessDelay else httpConfig.politenessDelay
+
     override suspend fun startup() {
+        logger.debug { "QA $queueId: Starting up QueueAnalyzer..." }
         processRobotsTxt()
         super.startup()
     }

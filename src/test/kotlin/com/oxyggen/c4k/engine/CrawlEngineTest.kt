@@ -17,8 +17,14 @@ internal class CrawlEngineTest {
             e.registerQueueAnalyzer("https://*", HttpQueueAnalyzer::class)
             e.registerQueueAnalyzer("http://*", HttpQueueAnalyzer::class)
             e.addTarget(HttpTarget("https://google.com"))
+            e.addTarget(HttpTarget("http://maps.google.com"))
+            e.addTarget(HttpTarget("https://google.com/1"))
+            e.addTarget(HttpTarget("http://maps.google.com/1"))
+            e.addTarget(HttpTarget("https://google.com/2"))
+            e.addTarget(HttpTarget("http://maps.google.com/2"))
+
             launch { e.execute() }
-            delay(200000)
+            delay(5_000)
             launch { e.stop() }
         }
     }

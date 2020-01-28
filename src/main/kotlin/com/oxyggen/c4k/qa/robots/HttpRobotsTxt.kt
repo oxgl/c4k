@@ -64,8 +64,8 @@ class HttpRobotsTxt(val content: String, val userAgent: String) {
 
     val group: Group = parseContent(content, userAgent)
 
-    val politenessDelay: Int
-        get() = group.params[PARAM_CRAWL_DELAY]?.toIntOrNull()?.times(1000) ?: -1
+    val politenessDelay: Long
+        get() = group.params[PARAM_CRAWL_DELAY]?.toLongOrNull()?.times(1000) ?: -1
 
     val sitemap: String
         get() = group.params[PARAM_SITEMAP] ?: ""
