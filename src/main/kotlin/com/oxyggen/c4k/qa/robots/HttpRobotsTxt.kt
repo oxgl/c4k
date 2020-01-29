@@ -3,7 +3,7 @@ package com.oxyggen.c4k.qa.robots
 import com.oxyggen.matcher.GlobMatcher
 import com.oxyggen.matcher.Matcher
 
-class HttpRobotsTxt(val content: String, val userAgent: String) {
+class HttpRobotsTxt(val content: String = "", val userAgent: String) {
 
     companion object {
         const val PARAM_USER_AGENT = "user-agent"

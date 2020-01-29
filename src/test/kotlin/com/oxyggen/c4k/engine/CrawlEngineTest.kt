@@ -11,9 +11,11 @@ import org.junit.jupiter.api.Test
 internal class CrawlEngineTest {
 
     @Test
-    fun `Executing and stopping engine after 2s`() {
+    fun `Executing and stopping engine after 10s`() {
         runBlocking {
-            val e = CrawlEngine(HttpConfig(), this)
+            val c = HttpConfig()
+            c.politenessDelay = 1_000
+            val e = CrawlEngine(c, this)
             e.registerQueueAnalyzer("https://*", HttpQueueAnalyzer::class)
             e.registerQueueAnalyzer("http://*", HttpQueueAnalyzer::class)
             e.addTarget(HttpTarget("https://google.com"))
@@ -24,7 +26,7 @@ internal class CrawlEngineTest {
             e.addTarget(HttpTarget("http://maps.google.com/2"))
 
             launch { e.execute() }
-            delay(5_000)
+            delay(10_000)
             launch { e.stop() }
         }
     }

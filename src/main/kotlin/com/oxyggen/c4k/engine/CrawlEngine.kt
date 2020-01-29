@@ -55,11 +55,17 @@ open class CrawlEngine(val config: Config, val coroutineScope: CoroutineScope = 
                     }
                 }
 
+                // Create query analyzer object
                 queueAnalyzer = qaConstructor?.callBy(qaConstructorParams) ?: qaClass.createInstance()
 
-                logger.debug { "New QueueAnalyzer with class $qaClass was created for queue $queueId" }
-                queueAnalyzer.startup()
+                // Put into queues set
                 queues[queueId] = queueAnalyzer
+
+                // Write log
+                logger.debug { "Engine: New QueueAnalyzer with class $qaClass was created for queue $queueId" }
+
+                // Startup with coroutine (do not wait)
+                coroutineScope.async { queueAnalyzer.startup() }
             }
         }
         queueAnalyzer
@@ -89,11 +95,11 @@ open class CrawlEngine(val config: Config, val coroutineScope: CoroutineScope = 
     )
 
     open suspend fun router() {
-        logger.debug { ">> Router started" }
+        logger.debug { "Engine: Router started" }
         var isActive = true
         while (isActive) {
             val event = engineChannel.receive()
-            logger.debug { "Engine event received: $event" }
+            logger.debug { "Engine: Event received: $event" }
             when (event.type) {
                 EngineEvent.Type.REROUTE -> {
                     // Get QueueAnalyzer for given QueueId
@@ -116,7 +122,7 @@ open class CrawlEngine(val config: Config, val coroutineScope: CoroutineScope = 
                 }
             }
         }
-        logger.debug { "<< Router exited" }
+        logger.debug { "Engine: Router exited" }
     }
 
     open suspend fun execute(): Unit {

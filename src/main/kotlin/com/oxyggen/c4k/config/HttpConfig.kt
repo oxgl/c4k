@@ -16,7 +16,7 @@ open class HttpConfig(config: Config? = null) : GenericConfig(config) {
         values.putIfAbsent(USER_AGENT, "c4k (Oxyggen Kotlin crawler library)")
     }
 
-    val politenessDelay
+    var politenessDelay: Long
         get() =
             when (val value = values[POLITENESS_DELAY]) {
                 is Long -> value
@@ -24,15 +24,28 @@ open class HttpConfig(config: Config? = null) : GenericConfig(config) {
                 is String -> value.toLong()
                 else -> 0L
             }
+        set(value) {
+            values[POLITENESS_DELAY] = value
+        }
 
-    val maxDepth
+
+    var maxDepth: Int
         get() = values[MAX_DEPTH] as Int
+        set(value) {
+            values[MAX_DEPTH] = value
+        }
 
-    val connectionTimeout
+    var connectionTimeout: Int
         get() = values[CONNECTION_TIMEOUT] as Int
+        set(value) {
+            values[CONNECTION_TIMEOUT] = value
+        }
 
-    val userAgent
+    var userAgent: String
         get() = values[USER_AGENT] as String
+        set(value) {
+            values[USER_AGENT] = value
+        }
 
     override fun getObjectCopy(): GenericConfig = HttpConfig(this)
 }
