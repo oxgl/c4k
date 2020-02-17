@@ -59,9 +59,9 @@ open class HttpQueueAnalyzer(
                 robotsTxt = HttpRobotsTxt(content = content, userAgent = httpConfig.userAgent)
                 logger.debug("QA $queueId/robots.txt, number of rules: ${robotsTxt.group?.rules?.size}")
             } else {
+                logger.debug("QA $queueId/robots.txt, returned status code: ${response.status.value}")
                 // Create default robots.txt handler (=everything allowed)
                 robotsTxt = HttpRobotsTxt(userAgent = httpConfig.userAgent)
-                logger.debug("QA $queueId/robots.txt, returned status code: ${response.status.value}")
             }
         } else {
             // Create default robots.txt handler (=everything allowed)

@@ -8,6 +8,8 @@ import com.oxyggen.c4k.target.Target
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.kotlin.Logging
 
 open class QueueAnalyzer(
@@ -19,6 +21,7 @@ open class QueueAnalyzer(
 
     protected val eventChannel = Channel<QueueEvent>(Channel.UNLIMITED)
     protected val targetChannel: Channel<Target> = Channel<Target>(Channel.UNLIMITED)
+    protected val tqMutex = Mutex()
     protected val tq = TargetMemoryStore()
 
     protected lateinit var eventReceiverJob: Job
@@ -51,7 +54,17 @@ open class QueueAnalyzer(
     protected open suspend fun eventReceived(event: QueueEvent): Boolean {
         when (event.type) {
             QueueEvent.Type.ADD_TARGET, QueueEvent.Type.REROUTE_TARGET -> {
-                if (event.target != null) targetChannel.offer(event.target)
+                if (event.target != null) {
+                    tqMutex.withLock {
+                        if (tq.isTargetStored(event.target)) {
+                            logger.debug { "QA $queueId target ${event.target} alredy known, skipping..." }
+                        } else {
+                            logger.debug { "QA $queueId new target ${event.target} received, adding to store..." }
+                            tq.enqueueWaitingTarget(event.target)
+                            targetChannel.offer(event.target)
+                        }
+                    }
+                }
                 return true
             }
             QueueEvent.Type.ABORT -> {
@@ -98,6 +111,9 @@ open class QueueAnalyzer(
             logger.debug { "QA $queueId targetScheduler executed, scheduler timeout $timeout..." }
             while (isActive) {
                 val nextTarget = targetChannel.receive()
+                tqMutex.withLock {
+                    
+                }
                 delay(timeout)
 
                 processTarget(nextTarget)

@@ -2,13 +2,17 @@ package com.oxyggen.c4k.target
 
 abstract class Target(val parent: Target? = null) {
 
+    enum class Status { CREATED, ANALYZING, FINISHED, CANCELLED }
+
     val depth: Int
 
+    var status: Status = Status.CREATED
+
     init {
-        if (parent != null) {
-            depth = parent.depth + 1
+        depth = if (parent != null) {
+            parent.depth + 1
         } else {
-            depth = 0
+            0
         }
     }
 
