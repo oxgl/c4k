@@ -1,6 +1,6 @@
 package com.oxyggen.c4k.old.analyzer
 
-import com.oxyggen.c4k.target.Target
+import com.oxyggen.c4k.persistency.Target
 import kotlin.reflect.KClass
 
 abstract class CrawlTargetAnalyzer {

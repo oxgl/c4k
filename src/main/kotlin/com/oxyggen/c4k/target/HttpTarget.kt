@@ -1,5 +1,6 @@
 package com.oxyggen.c4k.target
 
+import com.oxyggen.c4k.persistency.Target
 import com.oxyggen.net.HttpURL
 import io.ktor.http.HttpMethod
 

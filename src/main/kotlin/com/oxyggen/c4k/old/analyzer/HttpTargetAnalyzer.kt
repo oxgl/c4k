@@ -1,17 +1,8 @@
 package com.oxyggen.c4k.old.analyzer
 
-import com.oxyggen.c4k.target.Target
+import com.oxyggen.c4k.persistency.Target
 import com.oxyggen.c4k.target.HttpTarget
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.apache.Apache
-import io.ktor.client.features.UserAgent
-import io.ktor.client.request.request
-import io.ktor.client.response.readText
-import io.ktor.client.statement.HttpStatement
-import io.ktor.http.HttpStatusCode
-import io.ktor.http.takeFrom
 import org.apache.logging.log4j.kotlin.Logging
-import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import kotlin.reflect.KClass
 

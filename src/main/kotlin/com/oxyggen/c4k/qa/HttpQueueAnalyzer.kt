@@ -5,7 +5,7 @@ import com.oxyggen.c4k.config.HttpConfig
 import com.oxyggen.c4k.event.EngineEvent
 import com.oxyggen.c4k.qa.robots.HttpRobotsTxt
 import com.oxyggen.c4k.target.HttpTarget
-import com.oxyggen.c4k.target.Target
+import com.oxyggen.c4k.persistency.Target
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.apache.Apache
 import io.ktor.client.features.UserAgent

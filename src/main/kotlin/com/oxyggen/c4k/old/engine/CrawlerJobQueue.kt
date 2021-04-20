@@ -1,7 +1,7 @@
 package com.oxyggen.c4k.old.engine
 
 import com.oxyggen.c4k.old.analyzer.CrawlTargetAnalyzer
-import com.oxyggen.c4k.target.Target
+import com.oxyggen.c4k.persistency.Target
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async

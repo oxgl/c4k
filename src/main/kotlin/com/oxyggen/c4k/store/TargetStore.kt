@@ -1,6 +1,6 @@
 package com.oxyggen.c4k.store
 
-import com.oxyggen.c4k.target.Target
+import com.oxyggen.c4k.persistency.Target
 import org.apache.logging.log4j.kotlin.Logging
 
 abstract class TargetStore() : Logging {

@@ -4,7 +4,7 @@ import com.oxyggen.c4k.config.Config
 import com.oxyggen.c4k.event.EngineEvent
 import com.oxyggen.c4k.event.QueueEvent
 import com.oxyggen.c4k.qa.QueueAnalyzer
-import com.oxyggen.c4k.target.Target
+import com.oxyggen.c4k.persistency.Target
 import com.oxyggen.matcher.GlobMatcher
 import com.oxyggen.matcher.Matcher
 import kotlinx.coroutines.*

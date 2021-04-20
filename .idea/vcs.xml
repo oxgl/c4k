@@ -2,5 +2,6 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/.gradle/vcs-1/urilib_3e0ggvf160a1n3b93agfur95o/urilib" vcs="Git" />
   </component>
 </project>

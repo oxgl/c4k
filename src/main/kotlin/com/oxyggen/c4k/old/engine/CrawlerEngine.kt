@@ -2,7 +2,7 @@ package com.oxyggen.c4k.old.engine
 
 import com.oxyggen.c4k.old.analyzer.CrawlTargetAnalyzer
 import com.oxyggen.c4k.old.analyzer.HttpTargetAnalyzer
-import com.oxyggen.c4k.target.Target
+import com.oxyggen.c4k.persistency.Target
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import org.apache.logging.log4j.kotlin.Logging

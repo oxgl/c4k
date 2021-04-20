@@ -4,7 +4,7 @@ import com.oxyggen.c4k.config.Config
 import com.oxyggen.c4k.event.EngineEvent
 import com.oxyggen.c4k.event.QueueEvent
 import com.oxyggen.c4k.store.TargetMemoryStore
-import com.oxyggen.c4k.target.Target
+import com.oxyggen.c4k.persistency.Target
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel

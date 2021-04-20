@@ -1,4 +1,4 @@
-package com.oxyggen.c4k.target
+package com.oxyggen.c4k.persistency
 
 abstract class Target(val parent: Target? = null) {
 
@@ -6,7 +6,8 @@ abstract class Target(val parent: Target? = null) {
 
     val depth: Int
 
-    var status: Status = Status.CREATED
+    var status: Status =
+        Status.CREATED
 
     init {
         depth = if (parent != null) {
